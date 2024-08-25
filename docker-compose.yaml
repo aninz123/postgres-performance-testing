@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  db:
+    build: 
+      context: .
+      dockerfile: Dockerfile.postgres  
+    container_name: postgres_performance_test
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: testdb
+      POSTGRES_USER: testuser
+      POSTGRES_PASSWORD: testpass
+    command: 
+      - "postgres"
+      - "-c"
+      - "max_connections=100"
+      - "-c"
+      - "shared_buffers=256MB"
+      - "-c"
+      - "work_mem=16MB"
+      - "-c"
+      - "maintenance_work_mem=64MB"
+      - "-c"
+      - "effective_cache_size=768MB"
+    networks:
+      - postgres_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U testuser -d testdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    mem_limit: 1g
+    cpus: "1.0"
+
+  pgadmin:
+    image: elestio/pgadmin
+    container_name: pgadmin
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: adminpass
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
+      PGADMIN_SERVER_JSON_FILE: /pgadmin4/servers.json
+      
+    volumes:
+      - ./servers.json:/pgadmin4/servers.json:ro
+    ports:
+      - "8080:80"
+    networks:
+      - postgres_network
+    depends_on:
+      db:
+        condition: service_healthy
+
+networks:
+  postgres_network:
+    driver: bridge

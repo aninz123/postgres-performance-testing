@@ -1,0 +1,18 @@
+FROM postgres:13
+
+# Install additional tools if needed
+RUN apt-get update && apt-get install -y postgresql-contrib
+
+# Ensure pg_isready is in the PATH
+ENV PATH="/usr/lib/postgresql/13/bin:${PATH}"
+
+# Copy the SQL script
+COPY init.sql /docker-entrypoint-initdb.d/
+
+# Set environment variables
+ENV POSTGRES_DB=testdb
+ENV POSTGRES_USER=testuser
+ENV POSTGRES_PASSWORD=testpass
+
+# Set default command
+CMD ["postgres"]
